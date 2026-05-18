@@ -36,6 +36,21 @@ That's it. Openclaw now has a capped API key. If it goes rogue, it can only cost
 
 ---
 
+## Supported Agents
+
+| Agent | Config File | Command |
+|-------|-------------|---------|
+| **Claude Code** | `~/.claude/.credentials.json` | `capit openrouter 5.00 --agent claude` |
+| **Cursor** | `~/.config/Cursor/User/settings.json` | `capit openrouter 5.00 --agent cursor` |
+| **Windsurf** | `~/.config/Windsurf/User/settings.json` | `capit openrouter 5.00 --agent windsurf` |
+| **Hermes** | `~/.hermes/.env` | `capit openrouter 5.00 --agent hermes` |
+| **OpenClaw** | `~/.openclaw/secrets.json` + `openclaw.json` | `capit openrouter 5.00 --agent openclaw` |
+| **Opencode** | `~/.local/share/opencode/auth.json` | `capit openrouter 5.00 --agent opencode` |
+
+Run `capit --agents` to list all agents, or see [agents/README.md](capit/agents/README.md) for adding custom agents.
+
+---
+
 ## Install
 
 ```bash
@@ -61,6 +76,9 @@ capit openrouter 5.00 --agent hermes
 
 # OpenClaw - $5 cap
 capit openrouter 5.00 --agent openclaw
+
+# Opencode - $5 cap
+capit openrouter 5.00 --agent opencode
 ```
 
 Each agent gets its own capped key. Sleep soundly.
@@ -71,7 +89,7 @@ Each agent gets its own capped key. Sleep soundly.
 capit --agents  # List all supported agents
 ```
 
-See [agents/README.md](capit/agents/README.md) for the full list and adding custom agents.
+See [agents/README.md](capit/agents/README.md) for the full list and adding custom agents. The [supported agents table](#supported-agents) above has details on each.
 
 ## Platforms
 
