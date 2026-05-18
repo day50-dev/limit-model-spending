@@ -399,7 +399,7 @@ def handle_send_to(agent, key, platform, spend_cap, confirm=True):
 @click.argument("platform", required=False)
 @click.argument("spend_cap", required=False)
 @click.option("--prefix", "-p", help="Prefix for key organization")
-@click.option("--agent", "-a", metavar="AGENT", help="Send key to AI agent (claude, cursor, windsurf, ...)")
+@click.option("--agent", "-a", metavar="AGENT", help="Send key to AI agent (claude, cursor, hermes, windsurf, ...)")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation when configuring agent")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed progress")
 @click.pass_context

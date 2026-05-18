@@ -56,6 +56,9 @@ capit openrouter 10.00 --agent cursor
 # Windsurf - $5 cap
 capit openrouter 5.00 --agent windsurf
 
+# Hermes - $5 cap
+capit openrouter 5.00 --agent hermes
+
 # OpenClaw - $5 cap
 capit openrouter 5.00 --agent openclaw
 ```

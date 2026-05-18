@@ -16,6 +16,7 @@ When you run `capit openrouter 5.00 --agent claude`, capit:
 | **claude** | `~/.claude/.credentials.json` | `capit openrouter 5.00 --agent claude` |
 | **cursor** | `~/.config/Cursor/User/settings.json` | `capit openrouter 10.00 --agent cursor` |
 | **windsurf** | `~/.config/Windsurf/User/settings.json` | `capit openrouter 5.00 --agent windsurf` |
+| **hermes** | `~/.hermes/.env` | `capit openrouter 5.00 --agent hermes` |
 | **openclaw** | `~/.openclaw/secrets.json` + `openclaw.json` | `capit openrouter 5.00 --agent openclaw` |
 | **opencode** | `~/.local/share/opencode/auth.json` | `capit openrouter 5.00 --agent opencode` |
 
