@@ -865,16 +865,7 @@ def disable_cmd(platform):
 def serve_cmd(port, host):
     """Start the capit web server."""
     from capit.server import create_server
-    # Port 0 means random available port
-    if port == 0:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((host, 0))
-        port = s.getsockname()[1]
-        s.close()
-    
-    click.echo(f"capit web server running on http://{host}:{port}")
-    create_server(port=port, host=host)
+    port = create_server(port=port, host=host)
 
 
 def cli():

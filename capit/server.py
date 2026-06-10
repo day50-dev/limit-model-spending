@@ -214,19 +214,43 @@ def list_stores():
 
 
 def create_server(port=0, host='0.0.0.0'):
-    """Start the capit web server. Returns the actual port."""
-    # Port 0 means assign a random available port
-    if port == 0:
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((host, 0))
-        port = s.getsockname()[1]
-        s.close()
-    
-    # Print URL before starting (since Flask blocks)
+    """Start the capit web server. Returns the actual port.
+
+    If the port is taken, increments until an available port is found.
+    Port 0 means pick any available port from the OS.
+    """
+    import socket
     import sys
+
+    max_attempts = 100
+    for attempt in range(max_attempts):
+        try:
+            if port == 0:
+                # Port 0: let OS pick any available port
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind((host, 0))
+                port = s.getsockname()[1]
+                s.close()
+                break
+            else:
+                # Try the given port
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind((host, port))
+                s.close()
+                break
+        except OSError as e:
+            if e.errno == 98:  # Address already in use
+                if port == 0:
+                    # Retry with a random port
+                    continue
+                # Try the next port
+                port += 1
+                if port > 65535:
+                    port = 1024
+            else:
+                raise
+
     print(f"capit web server running on http://{host}:{port}", file=sys.stderr)
-    
     app.run(host=host, port=port, debug=False)
     return port
 
