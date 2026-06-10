@@ -11,7 +11,7 @@ from pathlib import Path
 
 import click
 
-from capit.agents.base import Agent, create_backups
+from capit.agents.base import Agent, create_backups, get_multi_file_preview
 
 
 def _get_provider_config(platform: str):
@@ -53,6 +53,73 @@ class OpenclawAgent(Agent):
             (self.get_secrets_path(), "secrets.json"),
             (self.get_config_path(), "openclaw.json")
         ]
+
+    def preview(self, platform: str, spend_cap: str, agent: str = None) -> dict:
+        """Get preview of changes without displaying."""
+        agent = agent or self.name
+        config_dir = self.get_config_dir()
+        secrets_path = self.get_secrets_path()
+        config_path = self.get_config_path()
+
+        config_dir.mkdir(parents=True, exist_ok=True)
+        provider_name, env_var = _get_provider_config(platform)
+
+        # Load existing secrets
+        if secrets_path.exists():
+            try:
+                with open(secrets_path, "r") as f:
+                    secrets = json.load(f)
+                old_secrets = copy.deepcopy(secrets)
+            except json.JSONDecodeError:
+                old_secrets = None
+        else:
+            old_secrets = None
+            secrets = {}
+
+        # Prepare new secrets with placeholder
+        new_secrets = copy.deepcopy(secrets) if secrets else {}
+        if "providers" not in new_secrets:
+            new_secrets["providers"] = {}
+        new_secrets["providers"][provider_name] = {
+            "source": "env",
+            "value": "<new key>"
+        }
+
+        # Load existing config
+        if config_path.exists():
+            try:
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                old_config = copy.deepcopy(config)
+            except json.JSONDecodeError:
+                old_config = None
+        else:
+            old_config = None
+            config = {}
+
+        # Prepare new config with placeholder
+        new_config = copy.deepcopy(config) if config else {}
+        if "models" not in new_config:
+            new_config["models"] = {}
+        if "providers" not in new_config["models"]:
+            new_config["models"]["providers"] = {}
+        new_config["models"]["providers"][provider_name] = {
+            "apiKey": {
+                "source": "env",
+                "provider": provider_name,
+                "id": env_var
+            }
+        }
+
+        return get_multi_file_preview(
+            files=[
+                (old_secrets, new_secrets, "secrets.json"),
+                (old_config, new_config, "openclaw.json")
+            ],
+            agent=agent,
+            platform=platform,
+            spend_cap=spend_cap
+        )
 
     def show_diff(self, platform: str, spend_cap: str, agent: str = None) -> bool:
         """Show diff for both config files."""
@@ -201,6 +268,7 @@ class OpenclawAgent(Agent):
 _agent = OpenclawAgent()
 show_diff = _agent.show_diff
 send = _agent.send
+preview = _agent.preview
 get_config_dir = _agent.get_config_dir
 get_secrets_path = _agent.get_secrets_path
 get_config_path = _agent.get_config_path

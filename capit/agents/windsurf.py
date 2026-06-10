@@ -23,4 +23,5 @@ class WindsurfAgent(SimpleAgent):
 _agent = WindsurfAgent()
 show_diff = _agent.show_diff
 send = _agent.send
+preview = _agent.preview
 get_settings_path = _agent.get_config_path

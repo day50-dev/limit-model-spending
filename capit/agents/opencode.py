@@ -7,7 +7,7 @@ import copy
 import json
 from pathlib import Path
 
-from capit.agents.base import Agent, create_backup, show_multi_file_diff
+from capit.agents.base import Agent, create_backup, show_multi_file_diff, get_multi_file_preview
 
 
 class OpencodeAgent(Agent):
@@ -18,6 +18,35 @@ class OpencodeAgent(Agent):
     def get_config_path(self) -> Path:
         """Get the path to Opencode auth file."""
         return Path.home() / ".local" / "share" / "opencode" / "auth.json"
+
+    def preview(self, platform: str, spend_cap: str, agent: str = None) -> dict:
+        """Get preview of changes without displaying."""
+        agent = agent or self.name
+        auth_path = self.get_config_path()
+
+        if auth_path.exists():
+            try:
+                with open(auth_path, "r") as f:
+                    auth = json.load(f)
+                old_auth = copy.deepcopy(auth)
+            except json.JSONDecodeError:
+                old_auth = None
+        else:
+            old_auth = None
+            auth = {}
+
+        new_auth = copy.deepcopy(auth) if auth else {}
+        new_auth[platform] = {
+            "type": "api",
+            "key": "<new key>"
+        }
+
+        return get_multi_file_preview(
+            files=[(old_auth, new_auth, "auth.json")],
+            agent=agent,
+            platform=platform,
+            spend_cap=spend_cap
+        )
 
     def show_diff(self, platform: str, spend_cap: str, agent: str = None) -> bool:
         """Show diff with opencode-specific provider structure."""
@@ -65,4 +94,5 @@ class OpencodeAgent(Agent):
 _agent = OpencodeAgent()
 show_diff = _agent.show_diff
 send = _agent.send
+preview = _agent.preview
 get_auth_path = _agent.get_config_path

@@ -149,6 +149,21 @@
         </div>
     </div>
 
+    <div id="diffModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-3xl w-full mx-4 max-h-[90vh] flex flex-col">
+            <h3 id="diffModalTitle" class="text-lg font-semibold mb-1">Review Changes</h3>
+            <p id="diffModalDesc" class="text-sm text-gray-400 mb-4"></p>
+            <div id="diffModalBody" class="flex-1 overflow-auto bg-gray-950 rounded-lg p-4 mb-4 border border-gray-800">
+                <p id="diffLoading" class="text-gray-500">Loading diff...</p>
+                <pre id="diffContent" class="text-xs leading-relaxed whitespace-pre-wrap font-mono text-gray-300 hidden"></pre>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="hideDiffModal()" class="flex-1 py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium">Cancel</button>
+                <button id="confirmInstallBtn" type="button" class="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-semibold rounded-lg">Install</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const modal = document.getElementById('modal');
         const modalTitle = document.getElementById('modalTitle');
@@ -157,6 +172,11 @@
         function showModal() { modal.classList.remove('hidden'); }
         function hideModal() { modal.classList.add('hidden'); }
         modal.addEventListener('click', function(e) { if (e.target === modal) hideModal(); });
+
+        var diffModal = document.getElementById('diffModal');
+        function showDiffModal() { diffModal.classList.remove('hidden'); }
+        function hideDiffModal() { diffModal.classList.add('hidden'); }
+        diffModal.addEventListener('click', function(e) { if (e.target === diffModal) hideDiffModal(); });
 
         function showAddPlatform() {
             const platforms = {{ platforms|tojson }};
@@ -208,25 +228,86 @@
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             var formData = new FormData(form);
-            result.classList.remove('hidden');
-            result.innerHTML = '<p class="text-gray-400">Creating key...</p>';
+            var data = Object.fromEntries(formData);
+            var agent = data.agent;
 
-            fetch('/api/issue', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(Object.fromEntries(formData))
-            }).then(function(res) { return res.json(); }).then(function(data) {
-                if (res.ok) {
-                    result.innerHTML = '<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">' +
-                        '<p class="text-emerald-400 font-medium">Key created!</p>' +
-                        '<pre class="mt-2 text-xs text-gray-300 overflow-x-auto">' + data.key + '</pre></div>';
-                    loadKeys();
-                } else {
-                    result.innerHTML = '<p class="text-red-400">' + data.error + '</p>';
-                }
-            })["catch"](function(err) {
-                result.innerHTML = '<p class="text-red-400">Error: ' + err + '</p>';
-            });
+            if (agent) {
+                result.classList.add('hidden');
+                document.getElementById('diffLoading').classList.remove('hidden');
+                document.getElementById('diffContent').classList.add('hidden');
+                showDiffModal();
+
+                fetch('/api/issue/preview', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(function(res) { return res.json(); }).then(function(preview) {
+                    if (preview.error) {
+                        document.getElementById('diffLoading').textContent = preview.error;
+                        document.getElementById('diffLoading').classList.remove('hidden');
+                        return;
+                    }
+                    document.getElementById('diffLoading').classList.add('hidden');
+                    document.getElementById('diffModalTitle').textContent = 'Configure ' + agent;
+                    document.getElementById('diffModalDesc').textContent = 'Install new $' + preview.spend_cap + ' ' + preview.platform + ' key into ' + agent + '?';
+                    var diffEl = document.getElementById('diffContent');
+                    if (preview.is_new_config) {
+                        diffEl.textContent = 'New configuration:\n' + preview.diff;
+                    } else {
+                        diffEl.textContent = preview.diff || '(no changes)';
+                    }
+                    diffEl.classList.remove('hidden');
+
+                    var installBtn = document.getElementById('confirmInstallBtn');
+                    var newBtn = installBtn.cloneNode(true);
+                    installBtn.parentNode.replaceChild(newBtn, installBtn);
+                    newBtn.addEventListener('click', function() {
+                        hideDiffModal();
+                        result.classList.remove('hidden');
+                        result.innerHTML = '<p class="text-gray-400">Creating key...</p>';
+                        data.confirmed = true;
+                        fetch('/api/issue', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(data)
+                        }).then(function(res) { return res.json(); }).then(function(resData) {
+                            if (resData.key) {
+                                result.innerHTML = '<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">' +
+                                    '<p class="text-emerald-400 font-medium">Key created and installed!</p>' +
+                                    '<pre class="mt-2 text-xs text-gray-300 overflow-x-auto">' + resData.key + '</pre></div>';
+                                loadKeys();
+                            } else {
+                                result.innerHTML = '<p class="text-red-400">' + (resData.error || 'Failed to create key') + '</p>';
+                            }
+                        })["catch"](function(err) {
+                            result.innerHTML = '<p class="text-red-400">Error: ' + err + '</p>';
+                        });
+                    });
+                })["catch"](function(err) {
+                    document.getElementById('diffLoading').textContent = 'Error: ' + err;
+                    document.getElementById('diffLoading').classList.remove('hidden');
+                });
+            } else {
+                result.classList.remove('hidden');
+                result.innerHTML = '<p class="text-gray-400">Creating key...</p>';
+
+                fetch('/api/issue', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(function(res) { return res.json(); }).then(function(resData) {
+                    if (resData.key) {
+                        result.innerHTML = '<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">' +
+                            '<p class="text-emerald-400 font-medium">Key created!</p>' +
+                            '<pre class="mt-2 text-xs text-gray-300 overflow-x-auto">' + resData.key + '</pre></div>';
+                        loadKeys();
+                    } else {
+                        result.innerHTML = '<p class="text-red-400">' + (resData.error || 'Failed to create key') + '</p>';
+                    }
+                })["catch"](function(err) {
+                    result.innerHTML = '<p class="text-red-400">Error: ' + err + '</p>';
+                });
+            }
         });
 
         function loadKeys() {

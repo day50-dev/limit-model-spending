@@ -30,4 +30,5 @@ class ClaudeAgent(SimpleAgent):
 _agent = ClaudeAgent()
 show_diff = _agent.show_diff
 send = _agent.send
+preview = _agent.preview
 get_credentials_path = _agent.get_config_path

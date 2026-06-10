@@ -55,6 +55,7 @@ def issue_key():
     spend_cap = data.get('spend_cap')
     agent = data.get('agent')
     prefix = data.get('prefix')
+    confirmed = data.get('confirmed', False)
 
     if not platform or not spend_cap:
         return jsonify({'error': 'Platform and spend_cap required'}), 400
@@ -65,9 +66,35 @@ def issue_key():
             str(spend_cap),
             prefix=prefix,
             send_to=agent if agent else None,
-            confirm=True
+            confirm=not confirmed
         )
         return jsonify({'key': key})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/issue/preview', methods=['POST'])
+def preview_issue():
+    data = request.get_json()
+    platform = data.get('platform')
+    spend_cap = data.get('spend_cap')
+    agent = data.get('agent')
+
+    if not platform or not spend_cap or not agent:
+        return jsonify({'error': 'Platform, spend_cap, and agent required'}), 400
+
+    try:
+        from capit import get_agent_module
+        agent_module = get_agent_module(agent)
+
+        if not hasattr(agent_module, 'preview'):
+            return jsonify({'error': f'Agent {agent} does not support preview'}), 400
+
+        preview_data = agent_module.preview(platform, spend_cap, agent)
+        preview_data['agent'] = agent
+        preview_data['platform'] = platform
+        preview_data['spend_cap'] = spend_cap
+        return jsonify(preview_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 

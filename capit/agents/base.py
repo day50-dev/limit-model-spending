@@ -112,6 +112,104 @@ def _display_diff(old_path: str, new_path: str):
             click.echo(result.stdout, err=True)
 
 
+def _get_diff_text(old_path: str, new_path: str) -> str:
+    """Get unified diff text between two files as a string."""
+    try:
+        result = subprocess.run(
+            ["diff", "-u", old_path, new_path],
+            capture_output=True, text=True
+        )
+        return result.stdout
+    except FileNotFoundError:
+        return ""
+
+
+def get_json_preview(
+    config_path: Path,
+    key_path: str,
+    new_value: str,
+    agent: str,
+    platform: str,
+    spend_cap: str
+) -> dict:
+    """Get preview of JSON config changes without displaying or prompting.
+
+    Args:
+        config_path: Path to the config file
+        key_path: Dot-notation path to the key field
+        new_value: The new value to show in the diff
+        agent: Agent name for display
+        platform: Platform name for display
+        spend_cap: Spending cap for display
+
+    Returns:
+        Dict with 'diff' (str), 'files' (list of str), 'is_new_config' (bool)
+    """
+    # Load existing config
+    if config_path.exists():
+        try:
+            with open(config_path, "r") as f:
+                config = json.load(f)
+            old_config = copy.deepcopy(config)
+        except json.JSONDecodeError:
+            old_config = None
+    else:
+        old_config = None
+        config = {}
+
+    # Prepare new config with placeholder - handle nested paths
+    new_config = copy.deepcopy(config) if config else {}
+    keys = key_path.split(".")
+    if len(keys) == 1:
+        new_config[key_path] = new_value
+    else:
+        parent_key = ".".join(keys[:-1])
+        field_key = keys[-1]
+        if parent_key in new_config and isinstance(new_config[parent_key], dict):
+            new_config[parent_key][field_key] = new_value
+        else:
+            new_config[parent_key] = {field_key: new_value}
+
+    # Create temp files for diff
+    temp_fd, temp_path = tempfile.mkstemp(prefix="capit-staged-", suffix=".json")
+    try:
+        with os.fdopen(temp_fd, "w") as f:
+            json.dump(new_config, f, indent=2)
+            f.write("\n")
+
+        diff_text = ""
+        is_new = True
+        file_paths = [str(config_path)]
+
+        if old_config is not None:
+            old_fd, old_path = tempfile.mkstemp(prefix="capit-current-", suffix=".json")
+            try:
+                with os.fdopen(old_fd, "w") as f:
+                    json.dump(old_config, f, indent=2)
+                    f.write("\n")
+                diff_text = _get_diff_text(old_path, temp_path)
+                is_new = False
+            finally:
+                try:
+                    Path(old_path).unlink()
+                except OSError:
+                    pass
+        else:
+            with open(temp_path, "r") as f:
+                diff_text = f.read()
+
+        return {
+            "diff": diff_text,
+            "files": file_paths,
+            "is_new_config": is_new
+        }
+    finally:
+        try:
+            Path(temp_path).unlink()
+        except OSError:
+            pass
+
+
 def show_json_diff(
     config_path: Path,
     key_path: str,
@@ -272,6 +370,77 @@ def show_multi_file_diff(
     )
 
 
+def get_multi_file_preview(
+    files: list,
+    agent: str,
+    platform: str,
+    spend_cap: str
+) -> dict:
+    """Get preview of multi-file config changes without displaying or prompting.
+
+    Args:
+        files: List of (old_data, new_data, label) tuples
+        agent: Agent name for display
+        platform: Platform name for display
+        spend_cap: Spending cap for display
+
+    Returns:
+        Dict with 'diff' (str), 'files' (list of str), 'is_new_config' (bool)
+    """
+    all_diff_parts = []
+    file_paths = []
+    is_new_config = True
+
+    for old_data, new_data, label in files:
+        if old_data is not None:
+            old_fd, old_path = tempfile.mkstemp(prefix=f"capit-old-{label}-", suffix=".json")
+            new_fd, new_path = tempfile.mkstemp(prefix=f"capit-new-{label}-", suffix=".json")
+            try:
+                with os.fdopen(old_fd, "w") as f:
+                    json.dump(old_data, f, indent=2)
+                    f.write("\n")
+                with os.fdopen(new_fd, "w") as f:
+                    json.dump(new_data, f, indent=2)
+                    f.write("\n")
+
+                diff = _get_diff_text(old_path, new_path)
+                if diff:
+                    if len(files) > 1:
+                        all_diff_parts.append(f"=== {label} ===\n{diff}")
+                    else:
+                        all_diff_parts.append(diff)
+                is_new_config = False
+            finally:
+                try:
+                    Path(old_path).unlink()
+                    Path(new_path).unlink()
+                except OSError:
+                    pass
+        else:
+            temp_fd, temp_path = tempfile.mkstemp(prefix=f"capit-{label}-", suffix=".json")
+            try:
+                with os.fdopen(temp_fd, "w") as f:
+                    json.dump(new_data, f, indent=2)
+                    f.write("\n")
+                with open(temp_path, "r") as f:
+                    content = f.read()
+                if len(files) > 1:
+                    all_diff_parts.append(f"=== {label} (new) ===\n{content}")
+                else:
+                    all_diff_parts.append(content)
+            finally:
+                try:
+                    Path(temp_path).unlink()
+                except OSError:
+                    pass
+
+    return {
+        "diff": "\n".join(all_diff_parts),
+        "files": file_paths,
+        "is_new_config": is_new_config
+    }
+
+
 def install_key(
     config_path: Path,
     key_path: str,
@@ -399,6 +568,32 @@ class Agent(ABC):
             Dot-notation path to the key field
         """
         return self.key_path
+
+    def preview(self, platform: str, spend_cap: str, agent: str = None) -> dict:
+        """Get preview of changes without displaying or prompting.
+
+        Override this for agents with custom preview logic.
+
+        Args:
+            platform: Platform name
+            spend_cap: Spending cap
+            agent: Agent name (defaults to self.name)
+
+        Returns:
+            Dict with 'diff' (str), 'files' (list of str), 'is_new_config' (bool)
+        """
+        agent = agent or self.name
+        config_path = self.get_config_path()
+        key_path = self.get_key_path(platform)
+
+        return get_json_preview(
+            config_path=config_path,
+            key_path=key_path,
+            new_value="<new key>",
+            agent=agent,
+            platform=platform,
+            spend_cap=spend_cap
+        )
 
     def show_diff(self, platform: str, spend_cap: str, agent: str = None) -> bool:
         """Show diff of changes and ask for confirmation.

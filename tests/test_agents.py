@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from capit.agents import claude, cursor, windsurf, opencode, openclaw
+from capit.agents import claude, cursor, windsurf, hermes, opencode, openclaw
 
 
 class TestAgentInterface:
@@ -16,6 +16,7 @@ class TestAgentInterface:
         claude,
         cursor,
         windsurf,
+        hermes,
         opencode,
         openclaw,
     ])
@@ -28,6 +29,7 @@ class TestAgentInterface:
         claude,
         cursor,
         windsurf,
+        hermes,
         opencode,
         openclaw,
     ])
@@ -35,6 +37,19 @@ class TestAgentInterface:
         """All agents must have send function."""
         assert hasattr(agent_module, "send")
         assert callable(getattr(agent_module, "send"))
+
+    @pytest.mark.parametrize("agent_module", [
+        claude,
+        cursor,
+        windsurf,
+        hermes,
+        opencode,
+        openclaw,
+    ])
+    def test_agent_has_preview(self, agent_module):
+        """All agents must have preview function."""
+        assert hasattr(agent_module, "preview")
+        assert callable(getattr(agent_module, "preview"))
 
 
 class TestClaudeAgent:
