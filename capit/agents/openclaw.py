@@ -255,11 +255,11 @@ class OpenclawAgent(Agent):
             json.dump(config, f, indent=2)
             f.write("\n")
 
-        click.echo(f"${spend_cap} {platform} key installed into {agent}")
+        click.echo(f"${spend_cap} {platform} key installed into {agent}", err=True)
 
         if backup_paths:
             backup_locations = ", ".join(str(p) for p in backup_paths.values())
-            click.echo(f"Old configuration backed up to {backup_locations}")
+            click.echo(f"Old configuration backed up to {backup_locations}", err=True)
 
         return key
 

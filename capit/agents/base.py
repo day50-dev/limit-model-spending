@@ -87,11 +87,13 @@ def _display_diff(old_path: str, new_path: str):
 
     try:
         if diff_tool == "diff --color=auto":
-            subprocess.run(
+            result = subprocess.run(
                 ["diff", "--color=auto", "-u", old_path, new_path],
-                capture_output=False,
+                capture_output=True,
                 text=True
             )
+            if result.returncode != 0:
+                click.echo(result.stdout, err=True)
         elif diff_tool == "diff":
             result = subprocess.run(
                 ["diff", "-u", old_path, new_path],
@@ -283,7 +285,7 @@ def show_json_diff(
             # No existing config, show what will be created
             click.echo(click.style("Impacted Changes", bold=True), err=True)
             click.echo("", err=True)
-            click.echo("New configuration:")
+            click.echo("New configuration:", err=True)
             with open(temp_path, "r") as f:
                 click.echo(f.read(), err=True)
 
@@ -499,10 +501,10 @@ def install_key(
         f.write("\n")
     config_path.chmod(mode)
 
-    click.echo(f"${spend_cap} {platform} key installed into {agent}")
+    click.echo(f"${spend_cap} {platform} key installed into {agent}", err=True)
 
     if backup_path:
-        click.echo(f"Old configuration backed up to {backup_path}")
+        click.echo(f"Old configuration backed up to {backup_path}", err=True)
 
     return key_value
 
@@ -705,11 +707,11 @@ class Agent(ABC):
         # Write config
         self._write_config(config_path, config)
 
-        click.echo(f"${spend_cap} {platform} key installed into {agent}")
+        click.echo(f"${spend_cap} {platform} key installed into {agent}", err=True)
 
         if backup_paths:
             backup_locations = ", ".join(str(p) for p in backup_paths.values())
-            click.echo(f"Old configuration backed up to {backup_locations}")
+            click.echo(f"Old configuration backed up to {backup_locations}", err=True)
 
         return key
 

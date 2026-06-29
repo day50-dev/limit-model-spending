@@ -111,7 +111,9 @@ class HermesAgent(Agent):
             click.echo("", err=True)
             
             # Simple diff output
-            subprocess.run(["diff", "--color=auto", "-u", old_path, new_path])
+            result = subprocess.run(["diff", "--color=auto", "-u", old_path, new_path], capture_output=True, text=True)
+            if result.returncode != 0:
+                click.echo(result.stdout, err=True)
             
             click.echo("", err=True)
             click.echo("─" * 60, err=True)
@@ -137,11 +139,11 @@ class HermesAgent(Agent):
         env_data[key_name] = key
         self._save_env(config_path, env_data)
 
-        click.echo(f"${spend_cap} {platform} key installed into {self.name}")
+        click.echo(f"${spend_cap} {platform} key installed into {self.name}", err=True)
 
         if backup_paths:
             backup_locations = ", ".join(str(p) for p in backup_paths.values())
-            click.echo(f"Old configuration backed up to {backup_locations}")
+            click.echo(f"Old configuration backed up to {backup_locations}", err=True)
 
         return key
 
