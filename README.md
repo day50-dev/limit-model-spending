@@ -93,7 +93,7 @@ See [agents/README.md](capit/agents/README.md) for the full list and adding cust
 
 ## Platforms
 
-The included platforms are [openrouter](https://openrouter.ai) and [aihubmix](https://aihubmix.com).
+The included platforms are [openrouter](https://openrouter.ai), [aihubmix](https://aihubmix.com), and [concentrate](https://concentrate.ai).
 
 Platforms are easy to create with a claude skill located in `skills/platform-creator.md`.
 

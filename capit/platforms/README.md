@@ -30,6 +30,22 @@ capit aihubmix 5.00 --agent claude -y
 
 Creates API keys with spending caps for aihubmix services.
 
+### Concentrate (LLM Gateway)
+
+**Best for:** AI agents using any major model provider through a single gateway
+
+```bash
+capit concentrate 5.00 --agent claude -y
+```
+
+Creates deterministic offline API keys for Concentrate, an LLM gateway that unifies 120+ models across 16+ providers. Since Concentrate manages keys through the dashboard, limits are applied manually when creating the key.
+
+**Features:**
+- Single key for 120+ models across providers
+- Guardrails (PII redaction) configurable via dashboard
+- Zero Data Retention (ZDR) and logging per key
+- Spend tracking by org, team, and key
+
 ## Adding Platforms
 
 ### Ask Claude
@@ -97,8 +113,7 @@ def create_limited_key(
 
 ```bash
 capit --platforms
-# example
-# openrouter
 # aihubmix
-# myplatform
+# concentrate
+# openrouter
 ```
