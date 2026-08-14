@@ -19,6 +19,7 @@ When you run `capit openrouter 5.00 --agent claude`, capit:
 | **hermes** | `~/.hermes/.env` | `capit openrouter 5.00 --agent hermes` |
 | **openclaw** | `~/.openclaw/secrets.json` + `openclaw.json` | `capit openrouter 5.00 --agent openclaw` |
 | **opencode** | `~/.local/share/opencode/auth.json` | `capit openrouter 5.00 --agent opencode` |
+| **pi** | `~/.pi/agent/auth.json` | `capit openrouter 5.00 --agent pi` |
 
 ## Output Format
 
@@ -197,8 +198,10 @@ capit --agents
 # claude
 # cursor
 # windsurf
+# hermes
 # openclaw
 # opencode
+# pi
 # example
 ```
 

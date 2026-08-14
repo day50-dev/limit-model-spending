@@ -46,6 +46,7 @@ That's it. Openclaw now has a capped API key. If it goes rogue, it can only cost
 | **Hermes** | `~/.hermes/.env` | `capit openrouter 5.00 --agent hermes` |
 | **OpenClaw** | `~/.openclaw/secrets.json` + `openclaw.json` | `capit openrouter 5.00 --agent openclaw` |
 | **Opencode** | `~/.local/share/opencode/auth.json` | `capit openrouter 5.00 --agent opencode` |
+| **Pi** | `~/.pi/agent/auth.json` | `capit openrouter 5.00 --agent pi` |
 
 Run `capit --agents` to list all agents, or see [agents/README.md](capit/agents/README.md) for adding custom agents.
 
@@ -79,6 +80,9 @@ capit openrouter 5.00 --agent openclaw
 
 # Opencode - $5 cap
 capit openrouter 5.00 --agent opencode
+
+# Pi - $5 cap
+capit openrouter 5.00 --agent pi
 ```
 
 Each agent gets its own capped key. Sleep soundly.

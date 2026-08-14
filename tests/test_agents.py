@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from capit.agents import claude, cursor, windsurf, hermes, opencode, openclaw
+from capit.agents import claude, cursor, windsurf, hermes, opencode, openclaw, pi
 
 
 class TestAgentInterface:
@@ -19,6 +19,7 @@ class TestAgentInterface:
         hermes,
         opencode,
         openclaw,
+        pi,
     ])
     def test_agent_has_show_diff(self, agent_module):
         """All agents must have show_diff function."""
@@ -32,6 +33,7 @@ class TestAgentInterface:
         hermes,
         opencode,
         openclaw,
+        pi,
     ])
     def test_agent_has_send(self, agent_module):
         """All agents must have send function."""
@@ -45,6 +47,7 @@ class TestAgentInterface:
         hermes,
         opencode,
         openclaw,
+        pi,
     ])
     def test_agent_has_preview(self, agent_module):
         """All agents must have preview function."""
@@ -154,6 +157,44 @@ class TestOpencodeAgent:
         auth = json.loads(mock_path.read_text())
         assert "openrouter" in auth
         assert auth["openrouter"]["type"] == "api"
+        assert auth["openrouter"]["key"] == "sk-test-key"
+
+
+class TestPiAgent:
+    """Tests for Pi agent."""
+
+    def test_get_auth_path(self):
+        """Should return correct auth path."""
+        path = pi.get_auth_path()
+        assert path.name == "auth.json"
+        assert ".pi" in str(path)
+        assert "agent" in str(path)
+
+    def test_get_auth_path_env_override(self, monkeypatch):
+        """Should honor PI_CODING_AGENT_DIR env var."""
+        monkeypatch.setenv("PI_CODING_AGENT_DIR", "/tmp/custom-pi-dir")
+        path = pi.get_auth_path()
+        assert str(path) == "/tmp/custom-pi-dir/auth.json"
+
+    def test_send_returns_key(self, tmp_path):
+        """send should return the key."""
+        mock_path = tmp_path / "auth.json"
+        with patch.object(pi, 'get_auth_path', return_value=mock_path):
+            result = pi.send("sk-test-key", "openrouter", "5.00", confirm=False)
+            assert result == "sk-test-key"
+
+    def test_send_creates_provider(self, tmp_path):
+        """send should create provider entry with api_key type."""
+        mock_path = tmp_path / "auth.json"
+        from capit.agents.pi import PiAgent
+        agent = PiAgent()
+        with patch.object(agent, 'get_config_path', return_value=mock_path):
+            agent.send("sk-test-key", "openrouter", "5.00", confirm=False)
+
+        assert mock_path.exists()
+        auth = json.loads(mock_path.read_text())
+        assert "openrouter" in auth
+        assert auth["openrouter"]["type"] == "api_key"
         assert auth["openrouter"]["key"] == "sk-test-key"
 
 
