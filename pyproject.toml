@@ -52,7 +52,7 @@ where = ["."]
 include = ["capit", "capit.*"]
 
 [tool.setuptools.package-data]
-capit = ["templates/*.html", "static/*"]
+capit = ["templates/*.html", "static/*", "logo.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

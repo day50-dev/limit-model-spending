@@ -213,6 +213,16 @@ def list_stores():
     return list_mods(Path(__file__).parent / "stores")
 
 
+LOGO_COLOR = "\033[38;5;44m"  # teal
+RESET = "\033[0m"
+
+
+def _print_logo():
+    logo_path = Path(__file__).parent / "logo.txt"
+    if logo_path.exists():
+        print(f"{LOGO_COLOR}{logo_path.read_text()}{RESET}", file=sys.stderr)
+
+
 def create_server(port=0, host='0.0.0.0'):
     """Start the capit web server. Returns the actual port.
 
@@ -221,6 +231,8 @@ def create_server(port=0, host='0.0.0.0'):
     """
     import socket
     import sys
+
+    _print_logo()
 
     max_attempts = 100
     for attempt in range(max_attempts):
@@ -250,7 +262,10 @@ def create_server(port=0, host='0.0.0.0'):
             else:
                 raise
 
-    print(f"capit web server running on http://{host}:{port}", file=sys.stderr)
+    display_host = "localhost" if host in ("0.0.0.0", "::") else host
+    url = f"http://{display_host}:{port}"
+    link = f"\033]8;;{url}\033\\{url}\033]8;;\033\\"
+    print(f"capit web server running on {link}", file=sys.stderr)
     app.run(host=host, port=port, debug=False)
     return port
 
