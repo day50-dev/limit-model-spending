@@ -214,7 +214,16 @@ def list_stores():
 
 
 LOGO_COLOR = "\033[38;5;44m"  # teal
+LINK_COLOR = "\033[4;38;5;33m"  # underlined blue
 RESET = "\033[0m"
+
+
+def _logo_width():
+    logo_path = Path(__file__).parent / "logo.txt"
+    if not logo_path.exists():
+        return 0
+    lines = logo_path.read_text().splitlines()
+    return max((len(line) for line in lines), default=0)
 
 
 def _print_logo():
@@ -264,8 +273,12 @@ def create_server(port=0, host='0.0.0.0'):
 
     display_host = "localhost" if host in ("0.0.0.0", "::") else host
     url = f"http://{display_host}:{port}"
-    link = f"\033]8;;{url}\033\\{url}\033]8;;\033\\"
-    print(f"capit web server running on {link}", file=sys.stderr)
+    hyperlink = f"\033]8;;{url}\033\\{LINK_COLOR}{url}{RESET}\033]8;;\033\\"
+    width = _logo_width() or len(url)
+    pad = max((width - len(url)) // 2, 0)
+    print(file=sys.stderr)
+    print(" " * pad + hyperlink, file=sys.stderr)
+    print(file=sys.stderr)
     app.run(host=host, port=port, debug=False)
     return port
 
